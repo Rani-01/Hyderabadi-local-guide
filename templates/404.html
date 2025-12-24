@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Hyderabad Culture Navigator{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>🤔 Oops! Page Not Found</h1>
+    <p>Looks like you've wandered into uncharted territory of Hyderabad!</p>
+</div>
+
+<div class="error-container" style="text-align: center; max-width: 600px; margin: 2rem auto;">
+    <div class="error-card" style="background-color: var(--card-bg); border: 1px solid var(--nizam-gold); border-radius: 12px; padding: 2rem;">
+        <h2 style="color: var(--nizam-gold); margin-bottom: 1rem;">404 - Page Not Found</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">
+            The page you're looking for doesn't exist. Maybe it's stuck in Hyderabadi time? 😄
+        </p>
+        
+        <div class="error-actions" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('home') }}" class="btn">🏠 Go Home</a>
+            <a href="{{ url_for('slang_translator') }}" class="btn">🗣️ Explore Slang</a>
+            <a href="{{ url_for('biryani_recommender') }}" class="btn">🍛 Find Biryani</a>
+        </div>
+    </div>
+</div>
+
+<div class="suggestions" style="text-align: center; margin: 2rem 0;">
+    <h3 style="color: var(--nizam-gold); margin-bottom: 1rem;">Popular Destinations</h3>
+    <div class="suggestion-links" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('slang_translator') }}" style="color: var(--text-light); text-decoration: none; padding: 0.5rem 1rem; background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--nizam-gold);">Slang Translator</a>
+        <a href="{{ url_for('biryani_recommender') }}" style="color: var(--text-light); text-decoration: none; padding: 0.5rem 1rem; background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--nizam-gold);">Biryani Spots</a>
+        <a href="{{ url_for('time_converter') }}" style="color: var(--text-light); text-decoration: none; padding: 0.5rem 1rem; background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--nizam-gold);">Time Converter</a>
+    </div>
+</div>
+{% endblock %}

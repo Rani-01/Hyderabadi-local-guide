@@ -1,0 +1,4 @@
+# file: D:\Kiro Projects\Kiro-Challenge-5\filters.py
+# hypothesis_version: 6.148.8
+
+[4.0, 4.2, 4.3, 4.4, 'All spots:', 'Banjara Hills', 'Bawarchi', 'Bustling', 'Charminar', 'Filter by both:', 'Filter stats:', 'Heritage', 'Hotel Shadab', 'Local', 'Lucky Restaurant', 'Paradise', 'RTC X Roads', 'Secunderabad', 'Shah Ghouse', 'Tolichowki', 'Traditional', 'Unique areas:', 'Unique vibes:', 'Upscale', '__main__', 'area', 'area_counts', 'name', 'rating', 'total_spots', 'unique_areas', 'unique_vibes', 'vibe', 'vibe_counts']

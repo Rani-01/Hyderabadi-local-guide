@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Slang Translator - Hyderabad Culture Navigator{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>🗣️ Hyderabadi Slang Translator</h1>
+    <p>Discover the meaning behind local expressions and slang</p>
+</div>
+
+<div class="search-container">
+    <input type="text" id="slangSearch" class="search-bar" placeholder="Search for slang terms... (e.g., 'baigan', 'nakko')" autocomplete="off">
+    <div id="searchStatus" style="text-align: center; margin-top: 1rem; color: var(--text-muted);"></div>
+</div>
+
+<div id="suggestions" style="display: none; text-align: center; margin: 1rem 0;">
+    <p style="color: var(--text-muted); margin-bottom: 0.5rem;">Did you mean:</p>
+    <div id="suggestionsList"></div>
+</div>
+
+<div id="slangResults" class="results-grid">
+    <!-- Results will be populated here -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let searchTimeout;
+const searchInput = document.getElementById('slangSearch');
+const resultsContainer = document.getElementById('slangResults');
+const statusDiv = document.getElementById('searchStatus');
+const suggestionsDiv = document.getElementById('suggestions');
+const suggestionsList = document.getElementById('suggestionsList');
+
+// Load all slang terms on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllSlang();
+});
+
+// Search functionality with debouncing
+searchInput.addEventListener('input', function(e) {
+    const query = e.target.value.trim();
+    
+    // Clear previous timeout
+    clearTimeout(searchTimeout);
+    
+    // Set new timeout for debounced search
+    searchTimeout = setTimeout(() => {
+        if (query === '') {
+            loadAllSlang();
+        } else {
+            searchSlang(query);
+        }
+    }, 300); // 300ms delay
+});
+
+// Handle suggestion clicks
+suggestionsList.addEventListener('click', function(e) {
+    if (e.target.classList.contains('suggestion-item')) {
+        const suggestion = e.target.textContent;
+        searchInput.value = suggestion;
+        searchSlang(suggestion);
+    }
+});
+
+async function loadAllSlang() {
+    try {
+        statusDiv.textContent = 'Loading all slang terms...';
+        suggestionsDiv.style.display = 'none';
+        
+        const response = await fetch('/api/slang/all');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayResults(data.data.map(entry => ({entry, score: 100})));
+            statusDiv.textContent = `Showing all ${data.total} slang terms`;
+        } else {
+            throw new Error(data.error || 'Failed to load slang terms');
+        }
+    } catch (error) {
+        console.error('Error loading slang terms:', error);
+        statusDiv.textContent = 'Error loading slang terms';
+        resultsContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Error loading data. Please try again.</p>';
+    }
+}
+
+async function searchSlang(query) {
+    try {
+        statusDiv.textContent = `Searching for "${query}"...`;
+        suggestionsDiv.style.display = 'none';
+        
+        const response = await fetch(`/api/search/slang?q=${encodeURIComponent(query)}&threshold=50&limit=20`);
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.results.length > 0) {
+                displayResults(data.results);
+                statusDiv.textContent = `Found ${data.total} result${data.total !== 1 ? 's' : ''} for "${query}"`;
+            } else {
+                resultsContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No results found.</p>';
+                statusDiv.textContent = `No results found for "${query}"`;
+                
+                // Show suggestions if available
+                if (data.suggestions && data.suggestions.length > 0) {
+                    displaySuggestions(data.suggestions);
+                }
+            }
+        } else {
+            throw new Error(data.error || 'Search failed');
+        }
+    } catch (error) {
+        console.error('Error searching slang:', error);
+        statusDiv.textContent = 'Search error occurred';
+        resultsContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Search error. Please try again.</p>';
+    }
+}
+
+function displayResults(results) {
+    if (!results || results.length === 0) {
+        resultsContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No results to display.</p>';
+        return;
+    }
+    
+    const html = results.map(result => {
+        const entry = result.entry;
+        const score = result.score;
+        const matchField = result.match_field || 'term';
+        
+        return `
+            <div class="result-card">
+                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4>${escapeHtml(entry.term || 'Unknown')}</h4>
+                    ${score < 100 ? `<span style="color: var(--text-muted); font-size: 0.8rem;">${score}% match</span>` : ''}
+                </div>
+                <p style="color: var(--text-light); margin-bottom: 0.5rem;">
+                    <strong>Translation:</strong> ${escapeHtml(entry.translation || 'No translation available')}
+                </p>
+                ${entry.category ? `<p style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem;">
+                    <strong>Category:</strong> ${escapeHtml(entry.category)}
+                </p>` : ''}
+                ${entry.usage ? `<p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">
+                    <strong>Usage:</strong> ${escapeHtml(entry.usage)}
+                </p>` : ''}
+                ${matchField && score < 100 ? `<div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--nizam-gold);">
+                    Best match in: ${matchField}
+                </div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    resultsContainer.innerHTML = html;
+}
+
+function displaySuggestions(suggestions) {
+    if (!suggestions || suggestions.length === 0) {
+        suggestionsDiv.style.display = 'none';
+        return;
+    }
+    
+    const html = suggestions.map(suggestion => 
+        `<span class="suggestion-item" style="
+            display: inline-block; 
+            background-color: var(--card-bg); 
+            color: var(--nizam-gold); 
+            padding: 0.25rem 0.75rem; 
+            margin: 0.25rem; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            border: 1px solid var(--nizam-gold);
+            transition: all 0.3s ease;
+        " onmouseover="this.style.backgroundColor='var(--nizam-gold)'; this.style.color='var(--royal-charcoal)';" 
+           onmouseout="this.style.backgroundColor='var(--card-bg)'; this.style.color='var(--nizam-gold)';">
+            ${escapeHtml(suggestion)}
+        </span>`
+    ).join('');
+    
+    suggestionsList.innerHTML = html;
+    suggestionsDiv.style.display = 'block';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

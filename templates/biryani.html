@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Biryani Recommender - Hyderabad Culture Navigator{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>🍛 Biryani Spot Recommender</h1>
+    <p>Find the perfect biryani experience across Hyderabad</p>
+</div>
+
+<div class="search-container">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <select id="areaFilter" class="search-bar" style="flex: 1; min-width: 200px;">
+            <option value="">All Areas</option>
+            <!-- Options will be populated from data -->
+        </select>
+        <select id="vibeFilter" class="search-bar" style="flex: 1; min-width: 200px;">
+            <option value="">All Vibes</option>
+            <!-- Options will be populated from data -->
+        </select>
+        <button id="clearFilters" class="btn" style="white-space: nowrap;">Clear Filters</button>
+    </div>
+    <div id="filterStatus" style="text-align: center; margin-top: 1rem; color: var(--text-muted);"></div>
+</div>
+
+<div id="biryaniResults" class="results-grid">
+    <!-- Results will be populated here -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilters = { area: '', vibe: '' };
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadFilterOptions();
+    loadAllBiryaniSpots();
+});
+
+// Filter event listeners
+document.getElementById('areaFilter').addEventListener('change', function(e) {
+    currentFilters.area = e.target.value;
+    applyFilters();
+});
+
+document.getElementById('vibeFilter').addEventListener('change', function(e) {
+    currentFilters.vibe = e.target.value;
+    applyFilters();
+});
+
+document.getElementById('clearFilters').addEventListener('click', function() {
+    document.getElementById('areaFilter').value = '';
+    document.getElementById('vibeFilter').value = '';
+    currentFilters = { area: '', vibe: '' };
+    loadAllBiryaniSpots();
+});
+
+async function loadFilterOptions() {
+    try {
+        const response = await fetch('/api/biryani/filters');
+        const data = await response.json();
+        
+        if (data.success) {
+            populateFilterOptions('areaFilter', data.areas, data.area_counts);
+            populateFilterOptions('vibeFilter', data.vibes, data.vibe_counts);
+        } else {
+            console.error('Failed to load filter options:', data.error);
+        }
+    } catch (error) {
+        console.error('Error loading filter options:', error);
+    }
+}
+
+function populateFilterOptions(selectId, options, counts) {
+    const select = document.getElementById(selectId);
+    const currentValue = select.value; // Preserve current selection
+    
+    // Clear existing options except the first one (All Areas/All Vibes)
+    while (select.children.length > 1) {
+        select.removeChild(select.lastChild);
+    }
+    
+    // Add new options
+    options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option;
+        const count = counts[option] || 0;
+        optionElement.textContent = `${option} (${count})`;
+        select.appendChild(optionElement);
+    });
+    
+    // Restore selection
+    select.value = currentValue;
+}
+
+async function loadAllBiryaniSpots() {
+    try {
+        document.getElementById('filterStatus').textContent = 'Loading biryani spots...';
+        
+        const response = await fetch('/api/biryani/all');
+        const data = await response.json();
+        
+        if (data.success) {
+            displayBiryaniSpots(data.data);
+            document.getElementById('filterStatus').textContent = `Showing all ${data.total} biryani spots`;
+        } else {
+            throw new Error(data.error || 'Failed to load biryani spots');
+        }
+    } catch (error) {
+        console.error('Error loading biryani spots:', error);
+        document.getElementById('filterStatus').textContent = 'Error loading biryani spots';
+        document.getElementById('biryaniResults').innerHTML = '<p style="text-align: center; color: var(--text-muted);">Error loading data. Please try again.</p>';
+    }
+}
+
+async function applyFilters() {
+    try {
+        const { area, vibe } = currentFilters;
+        const params = new URLSearchParams();
+        
+        if (area) params.append('area', area);
+        if (vibe) params.append('vibe', vibe);
+        
+        document.getElementById('filterStatus').textContent = 'Filtering spots...';
+        
+        const response = await fetch(`/api/biryani/filter?${params.toString()}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayBiryaniSpots(data.results);
+            
+            let statusText = `Found ${data.total} spot${data.total !== 1 ? 's' : ''}`;
+            if (area || vibe) {
+                const filters = [];
+                if (area) filters.push(`area: ${area}`);
+                if (vibe) filters.push(`vibe: ${vibe}`);
+                statusText += ` matching ${filters.join(', ')}`;
+            }
+            document.getElementById('filterStatus').textContent = statusText;
+        } else {
+            throw new Error(data.error || 'Filtering failed');
+        }
+    } catch (error) {
+        console.error('Error applying filters:', error);
+        document.getElementById('filterStatus').textContent = 'Filter error occurred';
+        document.getElementById('biryaniResults').innerHTML = '<p style="text-align: center; color: var(--text-muted);">Filter error. Please try again.</p>';
+    }
+}
+
+function displayBiryaniSpots(spots) {
+    const resultsContainer = document.getElementById('biryaniResults');
+    
+    if (!spots || spots.length === 0) {
+        resultsContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No biryani spots found matching your criteria.</p>';
+        return;
+    }
+    
+    const html = spots.map(spot => {
+        const rating = spot.rating || 0;
+        const stars = generateStarRating(rating);
+        
+        return `
+            <div class="biryani-card">
+                <div class="card-header">
+                    <h3>${escapeHtml(spot.name || 'Unknown Restaurant')}</h3>
+                    <div class="rating">
+                        ${stars}
+                        <span class="rating-number">${rating.toFixed(1)}</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="location-info">
+                        <span class="area-tag">📍 ${escapeHtml(spot.area || 'Unknown Area')}</span>
+                        <span class="vibe-tag">✨ ${escapeHtml(spot.vibe || 'Unknown Vibe')}</span>
+                    </div>
+                    ${spot.description ? `<p class="description">${escapeHtml(spot.description)}</p>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    resultsContainer.innerHTML = html;
+}
+
+function generateStarRating(rating) {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    
+    let stars = '';
+    
+    // Full stars
+    for (let i = 0; i < fullStars; i++) {
+        stars += '<span class="star full">★</span>';
+    }
+    
+    // Half star
+    if (hasHalfStar) {
+        stars += '<span class="star half">★</span>';
+    }
+    
+    // Empty stars
+    for (let i = 0; i < emptyStars; i++) {
+        stars += '<span class="star empty">☆</span>';
+    }
+    
+    return stars;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

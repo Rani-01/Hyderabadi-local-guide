@@ -1,0 +1,4 @@
+# file: D:\Kiro Projects\Kiro-Challenge-5\time_converter.py
+# hypothesis_version: 6.148.8
+
+['\nHyderabadi mode:', '"\'', '"Chai time"', '"Dopahar"', '"Raat ka khana"', '"Subah subah"', '"Thoda late"', '%H:%M', '%I:%M %p', '10:00 PM', '12:00 PM', '4:00 PM', '8:00 PM', '9:00 AM', 'AM', 'Dinner time', 'Early morning', 'Getting late', 'Lunch time', 'PM', 'Standard mode:', 'Tea time', '__main__', 'context', 'description', 'display_time', 'hyderabadi', 'hyderabadi_reference', 'hyderabadi_time', 'inf', 'is_current', 'mode', 'reference', 'standard', 'standard_reference', 'standard_time']

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Time Converter - Hyderabad Culture Navigator{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>⏰ Hyderabadi Time Converter</h1>
+    <p>Understanding time the Hyderabadi way</p>
+</div>
+
+<div class="toggle-container">
+    <span class="toggle-label">Standard Time</span>
+    <div class="toggle-switch" id="timeToggle">
+        <div class="toggle-slider"></div>
+    </div>
+    <span class="toggle-label">Hyderabadi Reality</span>
+</div>
+
+<div id="currentTimeCard" class="current-time-card" style="display: none;">
+    <h3>🕐 Right Now</h3>
+    <div id="currentTimeContent"></div>
+</div>
+
+<div id="timeStatus" style="text-align: center; margin: 1rem 0; color: var(--text-muted);"></div>
+
+<div id="timeResults" class="results-grid">
+    <!-- Time conversions will be populated here -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentMode = 'standard';
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCurrentTime();
+    loadTimeConversions('standard');
+});
+
+// Time toggle functionality
+document.getElementById('timeToggle').addEventListener('click', function() {
+    this.classList.toggle('active');
+    const isHyderabadiMode = this.classList.contains('active');
+    currentMode = isHyderabadiMode ? 'hyderabadi' : 'standard';
+    
+    // Update toggle labels
+    updateToggleLabels(isHyderabadiMode);
+    
+    // Load time conversions for new mode
+    loadTimeConversions(currentMode);
+});
+
+function updateToggleLabels(isHyderabadiMode) {
+    const labels = document.querySelectorAll('.toggle-label');
+    if (isHyderabadiMode) {
+        labels[0].style.color = 'var(--text-muted)';
+        labels[1].style.color = 'var(--nizam-gold)';
+        labels[1].style.fontWeight = 'bold';
+        labels[0].style.fontWeight = 'normal';
+    } else {
+        labels[0].style.color = 'var(--nizam-gold)';
+        labels[1].style.color = 'var(--text-muted)';
+        labels[0].style.fontWeight = 'bold';
+        labels[1].style.fontWeight = 'normal';
+    }
+}
+
+async function loadCurrentTime() {
+    try {
+        const response = await fetch('/api/time/current');
+        const data = await response.json();
+        
+        if (data.success && data.current_time) {
+            displayCurrentTime(data.current_time);
+        } else {
+            // Hide current time card if no context found
+            document.getElementById('currentTimeCard').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading current time:', error);
+        document.getElementById('currentTimeCard').style.display = 'none';
+    }
+}
+
+function displayCurrentTime(currentTime) {
+    const card = document.getElementById('currentTimeCard');
+    const content = document.getElementById('currentTimeContent');
+    
+    const html = `
+        <div class="current-time-display">
+            <div class="time-pair">
+                <span class="standard-time">${escapeHtml(currentTime.standard_time)}</span>
+                <span class="equals">=</span>
+                <span class="hyderabadi-time">${escapeHtml(currentTime.hyderabadi_time)}</span>
+            </div>
+            <p class="time-context">${escapeHtml(currentTime.context)}</p>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+    card.style.display = 'block';
+}
+
+async function loadTimeConversions(mode) {
+    try {
+        document.getElementById('timeStatus').textContent = `Loading ${mode} time format...`;
+        
+        const response = await fetch(`/api/time/convert?mode=${mode}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayTimeConversions(data.times, mode);
+            document.getElementById('timeStatus').textContent = `Showing ${data.total} time conversions in ${mode} format`;
+        } else {
+            throw new Error(data.error || 'Failed to load time conversions');
+        }
+    } catch (error) {
+        console.error('Error loading time conversions:', error);
+        document.getElementById('timeStatus').textContent = 'Error loading time conversions';
+        document.getElementById('timeResults').innerHTML = '<p style="text-align: center; color: var(--text-muted);">Error loading data. Please try again.</p>';
+    }
+}
+
+function displayTimeConversions(times, mode) {
+    const resultsContainer = document.getElementById('timeResults');
+    
+    if (!times || times.length === 0) {
+        resultsContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No time conversions available.</p>';
+        return;
+    }
+    
+    const html = times.map(timeEntry => {
+        const isHyderabadiMode = mode === 'hyderabadi';
+        
+        return `
+            <div class="time-card ${timeEntry.is_current ? 'current' : ''}">
+                <div class="time-display">
+                    <h4 class="main-time">${escapeHtml(timeEntry.display_time)}</h4>
+                    <p class="reference-time">${escapeHtml(timeEntry.reference)}</p>
+                </div>
+                <div class="time-description">
+                    <p>${escapeHtml(timeEntry.description)}</p>
+                </div>
+                ${timeEntry.is_current ? '<div class="current-indicator">Current Time</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
+    resultsContainer.innerHTML = html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+    <h1>Welcome to Hyderabad</h1>
+    <p>Your cultural guide to the Pearl City - from local slang to the best biryani spots and understanding Hyderabadi time!</p>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <h3>🗣️ Slang Translator</h3>
+        <p>Decode local Hyderabadi slang and expressions. Search through our comprehensive database with smart fuzzy matching.</p>
+        <a href="{{ url_for('slang_translator') }}" class="btn">Explore Lingo</a>
+    </div>
+    
+    <div class="feature-card">
+        <h3>🍛 Biryani Recommender</h3>
+        <p>Discover the best biryani spots across Hyderabad. Filter by area and vibe to find your perfect meal.</p>
+        <a href="{{ url_for('biryani_recommender') }}" class="btn">Find Biryani</a>
+    </div>
+    
+    <div class="feature-card">
+        <h3>⏰ Time Converter</h3>
+        <p>Understand the difference between standard time and "Hyderabadi Reality" - because time works differently here!</p>
+        <a href="{{ url_for('time_converter') }}" class="btn">Convert Time</a>
+    </div>
+</div>
+{% endblock %}
