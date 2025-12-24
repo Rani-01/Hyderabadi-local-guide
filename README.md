@@ -168,8 +168,15 @@ The application is configured to:
 - Run on `0.0.0.0:8000` for external access
 - Parse data on startup with error handling
 - Serve static files from `/static`
+
+
 - Handle errors gracefully with custom pages
 
 ---
 
 **Built with ❤️ for the Pearl City of Hyderabad** 🏛️✨
+
+
+https://github.com/user-attachments/assets/10c391b9-4291-4401-9241-892bfadefbf4
+
+
